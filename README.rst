@@ -27,7 +27,7 @@ It is very much inspired from the Flask-powered `rq-dashboard`_.
 
 * Licence: BSD
 
-* Compatibility: Django 1.4 and greater
+* Compatibility: Django 1.4 and greater, pytz and a recent RQ (>= 0.3)
 
 * Code & docs: https://github.com/brutasse/django-rq-dashboard
 

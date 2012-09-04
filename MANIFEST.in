@@ -1,0 +1,4 @@
+include README.rst LICENSE
+recursive-include django_rq_dashboard/templates *
+recursive-include django_rq_dashboard/static *
+recursive-exclude django_rq_dashboard *.pyc
