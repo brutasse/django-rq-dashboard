@@ -65,6 +65,30 @@
 				</tbody>
 			</table>
 		</div>
+
+		{% if scheduler %}
+		<div class="module">
+			<table id="scheduled">
+				<caption>{% trans "Scheduler" %}</caption>
+				<thead>
+					<tr>
+						<th>{% trans "Queue" %}</th>
+						<th>{% trans "Jobs" %}</th>
+					</tr>
+				</thead>
+				<tbody>
+					{% for queue in scheduled_queues %}
+						<tr class="{% cycle "row2" "row1" %}">
+							<td><a href="{% url "rq_scheduler" queue.name %}">{{ queue.name }}</a></td>
+							<td>{{ queue.job_count }}</td>
+						</tr>
+					{% empty %}
+						<tr><td colspan="2">{% trans "No scheduled jobs" %}</td></tr>
+					{% endfor %}
+				</tbody>
+			</table>
+		</div>
+		{% endif %}
 	</div>
 
 	<script type="text/template" name="error-row">
@@ -91,6 +115,17 @@
 			<td><a href="<%= url %>"><%= name %></a></td>
 			<td><%= queues %></td>
 			<td><%= state %></td>
+		</tr>
+	</script>
+
+	<script type="text/template" name="no-scheduled-row">
+		<tr><td colspan="2">{% trans "No scheduled jobs" %}</td></tr>
+	</script>
+
+	<script type="text/template" name="scheduled-row">
+		<tr class="<%= klass %>">
+			<td><a href="<%= url %>"><%= name %></a></td>
+			<td><%= job_count %></td>
 		</tr>
 	</script>
 {% endblock %}
