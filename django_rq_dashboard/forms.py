@@ -55,7 +55,6 @@ class JobForm(ActionForm):
 
     def save(self):
         action = self.cleaned_data
-        print self.job.id
         if action == 'requeue':
             requeue_job(self.job.id, connection=self.job.connection)
         elif action == 'cancel':
