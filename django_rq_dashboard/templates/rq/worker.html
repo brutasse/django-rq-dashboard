@@ -17,7 +17,7 @@
 		<div class="module">
 			<dl>
 				<dt>{% trans "State" %}</dt>
-				<dd>{{ worker.state }}</dd>
+				<dd>{{ worker.get_state }}</dd>
 				<dt>{% trans "Queue names" %}</dt>
 				<dd><ul>{% for name in worker.queue_names %}
 					<li>{{ name }}</li>
