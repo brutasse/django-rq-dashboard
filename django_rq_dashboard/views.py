@@ -1,6 +1,7 @@
 import json
 import pytz
 import redis
+from itertools import groupby
 
 from django.contrib import messages
 from django.conf import settings
@@ -16,6 +17,12 @@ from rq import Queue, Worker, get_failed_queue, push_connection
 from rq.exceptions import NoSuchJobError
 from rq.job import Job
 
+try:
+    from rq_scheduler import Scheduler
+except ImportError:
+    # rq_scheduler is not installed
+    Scheduler = None
+
 from .forms import QueueForm, JobForm
 
 
@@ -27,7 +34,8 @@ def serialize_job(job):
         id=job.id,
         key=job.key,
         created_at=timezone.make_aware(job.created_at, utc),
-        enqueued_at=timezone.make_aware(job.enqueued_at, utc),
+        enqueued_at=timezone.make_aware(job.enqueued_at,
+                                        utc) if job.enqueued_at else None,
         ended_at=timezone.make_aware(job.ended_at,
                                      utc) if job.ended_at else None,
         origin=job.origin,
@@ -54,6 +62,20 @@ def serialize_worker(worker):
     )
 
 
+def serialize_scheduled_job(job, next_run):
+    adict = serialize_job(job)
+    adict['repeat'] = job.meta.get('repeat', None)
+    adict['interval'] = job.meta.get('interval', None)
+    adict['next_run'] = next_run
+    return adict
+
+
+def serialize_scheduled_queues(queue):
+    return dict(
+        url=reverse('rq_scheduler', args=[queue['name']]),
+        **queue)
+
+
 class SuperUserMixin(object):
     def dispatch(self, request, *args, **kwargs):
         if not request.user.is_superuser:
@@ -77,6 +99,14 @@ class Stats(SuperUserMixin, generic.TemplateView):
             'workers': Worker.all(connection=self.connection),
             'title': 'RQ Status',
         })
+        if Scheduler:
+            scheduler = Scheduler(self.connection)
+            get_queue = lambda job: job.origin
+            all_jobs = sorted(scheduler.get_jobs(), key=get_queue)
+            ctx['scheduler'] = scheduler
+            ctx['scheduled_queues'] = [
+                {'name': queue, 'job_count': len(list(jobs))}
+                for queue, jobs in groupby(all_jobs, get_queue)]
         return ctx
 
     def render_to_response(self, context, **response_kwargs):
@@ -84,6 +114,8 @@ class Stats(SuperUserMixin, generic.TemplateView):
             data = json.dumps({
                 'queues': [serialize_queue(q) for q in context['queues']],
                 'workers': [serialize_worker(w) for w in context['workers']],
+                'scheduled_queues': [serialize_scheduled_queues(q)
+                                     for q in context['scheduled_queues']],
             })
             return HttpResponse(
                 data, content_type='application/json; charset=UTF-8',
@@ -181,3 +213,27 @@ class WorkerDetails(SuperUserMixin, generic.TemplateView):
         })
         return ctx
 worker = WorkerDetails.as_view()
+
+
+class SchedulerDetails(SuperUserMixin, generic.TemplateView):
+    template_name = 'rq/scheduler.html'
+
+    def get_context_data(self, **kwargs):
+        ctx = super(SchedulerDetails, self).get_context_data(**kwargs)
+        if Scheduler is None:
+            # rq_scheduler is not installed
+            raise Http404
+        scheduler = Scheduler(self.connection)
+        queue = Queue(self.kwargs['queue'], connection=self.connection)
+        jobs = filter(lambda (job, next_run): job.origin == queue.name,
+                      scheduler.get_jobs(with_times=True))
+
+        ctx.update({
+            'queue': queue,
+            'jobs': [serialize_scheduled_job(job, next_run)
+                     for job, next_run in jobs],
+            'title': "Jobs scheduled on '%s' queue" % queue.name,
+        })
+        return ctx
+
+scheduler = SchedulerDetails.as_view()

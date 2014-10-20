@@ -1,0 +1,54 @@
+{% extends "admin/base_site.html" %}
+{% load i18n admin_static %}
+{% load url from future %}
+
+{% block content_title %}<h1>{{ title }}</h1>{% endblock %}
+
+{% block extrastyle %}
+	{{ block.super }}
+	<style>table {width: 100%;}</style>
+{% endblock %}
+
+{% block breadcrumbs %}
+	<div class="breadcrumbs">
+		<a href="{% url "admin:index" %}">{% trans "Home" %}</a> &rsaquo;
+		<a href="{% url "rq_stats" %}">{% trans "RQ Status" %}</a> &rsaquo;
+		{% blocktrans with queue.name as name %}Jobs scheduled on '{{ name }}' queue{% endblocktrans %}
+	</div>
+{% endblock %}
+
+{% block content %}
+	<div id="content-main">
+		<div class="module">
+			<table id="rq">
+				<caption>{% trans "Jobs" %}</caption>
+				<thead>
+					<tr>
+						<th>{% trans "Job ID" %}</th>
+						<th>{% trans "Description" %}</th>
+						<th>{% trans "Date created" %}</th>
+						<th>{% trans "Repeat" %}</th>
+						<th>{% trans "Interval" %}</th>
+						<th>{% trans "Next run" %}</th>
+						<th>{% trans "Origin" %}</th>
+					</tr>
+				</thead>
+				<tbody>
+					{% for job in jobs %}
+						<tr class="{% cycle "row2" "row1" %}">
+							<td><a href="{% url "rq_job" job.id %}">{{ job.id }}</a></td>
+							<td>{{ job.description }}</td>
+							<td title="{{ job.created_at }}">{% blocktrans with time=job.created_at|timesince %}{{ time }} ago{% endblocktrans %}</td>
+							<td>{{ job.repeat|default_if_none:_("Forever") }}</td>
+							<td>{{ job.interval|default_if_none:"" }}</td>
+							<td title="{{ job.next_run }}">{% if job.next_run %}{% blocktrans with time=job.next_run|timeuntil %}{{ time }}{% endblocktrans %}{% endif %}</td>
+							<td>{{ job.origin }}</td>
+						</tr>
+					{% empty %}
+						<tr><td colspan="7">{% trans "No jobs" %}</td></tr>
+					{% endfor %}
+				</tbody>
+			</table>
+		</div>
+	</div>
+{% endblock %}

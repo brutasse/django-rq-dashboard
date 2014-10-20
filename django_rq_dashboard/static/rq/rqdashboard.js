@@ -11,6 +11,10 @@
 		var tbody = $('#workers tbody');
 		tbody.empty();
 		tbody.append(html)
+
+		var tbody = $('#scheduled tbody');
+		tbody.empty();
+		tbody.append(html)
 	}
 
 	var success = function(data, textStatus, xhr) {
@@ -47,6 +51,21 @@
 			});
 		} else {
 			tbody.append($('script[name=no-worker-row]').html())
+		}
+
+		var tbody = $('#scheduled tbody');
+		tbody.empty();
+
+		if (data.scheduled_queues.length > 0) {
+			var template = _.template($('script[name=scheduled-row]').html())
+
+			$.each(data.scheduled_queues, function(i, queue) {
+				queue.klass = i % 2 == 0 ? 'row2' : 'row1';
+				var html = template(queue);
+				tbody.append($(html));
+			});
+		} else {
+			tbody.append($('script[name=no-scheduled-row]').html())
 		}
 	};
 
