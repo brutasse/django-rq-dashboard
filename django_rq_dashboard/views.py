@@ -17,6 +17,12 @@ from rq import Queue, Worker, get_failed_queue, push_connection
 from rq.exceptions import NoSuchJobError
 from rq.job import Job
 
+try:
+    from rq_scheduler import Scheduler
+except ImportError:
+    # rq_scheduler is not installed
+    Scheduler = None
+
 from .forms import QueueForm, JobForm
 
 
@@ -70,15 +76,6 @@ def serialize_scheduled_queues(queue):
         **queue)
 
 
-def get_scheduler(connection=None):
-    try:
-        from rq_scheduler import Scheduler
-        return Scheduler(connection=connection)
-    except ImportError:
-        # rq_scheduler not installed
-        return None
-
-
 class SuperUserMixin(object):
     def dispatch(self, request, *args, **kwargs):
         if not request.user.is_superuser:
@@ -97,16 +94,16 @@ class Stats(SuperUserMixin, generic.TemplateView):
 
     def get_context_data(self, **kwargs):
         ctx = super(Stats, self).get_context_data(**kwargs)
-        scheduler = get_scheduler(self.connection)
         ctx.update({
             'queues': Queue.all(connection=self.connection),
             'workers': Worker.all(connection=self.connection),
-            'scheduler': scheduler,
             'title': 'RQ Status',
         })
-        if scheduler:
+        if Scheduler:
+            scheduler = Scheduler(self.connection)
             get_queue = lambda job: job.origin
             all_jobs = sorted(scheduler.get_jobs(), key=get_queue)
+            ctx['scheduler'] = scheduler
             ctx['scheduled_queues'] = [
                 {'name': queue, 'job_count': len(list(jobs))}
                 for queue, jobs in groupby(all_jobs, get_queue)]
@@ -223,9 +220,10 @@ class SchedulerDetails(SuperUserMixin, generic.TemplateView):
 
     def get_context_data(self, **kwargs):
         ctx = super(SchedulerDetails, self).get_context_data(**kwargs)
-        scheduler = get_scheduler(self.connection)
-        if not scheduler:
+        if Scheduler is None:
+            # rq_scheduler is not installed
             raise Http404
+        scheduler = Scheduler(self.connection)
         queue = Queue(self.kwargs['queue'], connection=self.connection)
         jobs = filter(lambda (job, next_run): job.origin == queue.name,
                       scheduler.get_jobs(with_times=True))
