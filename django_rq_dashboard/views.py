@@ -225,7 +225,7 @@ class SchedulerDetails(SuperUserMixin, generic.TemplateView):
             raise Http404
         scheduler = Scheduler(self.connection)
         queue = Queue(self.kwargs['queue'], connection=self.connection)
-        jobs = filter(lambda (job, next_run): job.origin == queue.name,
+        jobs = filter(lambda job, next_run: job.origin == queue.name,
                       scheduler.get_jobs(with_times=True))
 
         ctx.update({
