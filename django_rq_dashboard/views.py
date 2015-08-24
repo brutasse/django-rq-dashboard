@@ -115,7 +115,7 @@ class Stats(SuperUserMixin, generic.TemplateView):
                 'queues': [serialize_queue(q) for q in context['queues']],
                 'workers': [serialize_worker(w) for w in context['workers']],
                 'scheduled_queues': [serialize_scheduled_queues(q)
-                                     for q in context['scheduled_queues']],
+                                     for q in context.get('scheduled_queues', [])],
             })
             return HttpResponse(
                 data, content_type='application/json; charset=UTF-8',
