@@ -97,6 +97,7 @@ class Stats(SuperUserMixin, generic.TemplateView):
         ctx.update({
             'queues': Queue.all(connection=self.connection),
             'workers': Worker.all(connection=self.connection),
+            'has_permission': True,
             'title': 'RQ Status',
         })
         if Scheduler:
@@ -138,6 +139,7 @@ class QueueDetails(SuperUserMixin, generic.FormView):
         ctx.update({
             'queue': queue,
             'jobs': [serialize_job(job) for job in queue.jobs],
+            'has_permission': True,
             'title': "'%s' queue" % queue.name,
             'failed': queue.name == 'failed',
         })
@@ -184,6 +186,7 @@ class JobDetails(SuperUserMixin, generic.FormView):
         ctx.update({
             'job': serialize_job(job),
             'queue': queue,
+            'has_permission': True,
             'title': _('Job %s') % job.id,
         })
         return ctx
@@ -209,6 +212,7 @@ class WorkerDetails(SuperUserMixin, generic.TemplateView):
         worker = Worker.find_by_key(key, connection=self.connection)
         ctx.update({
             'worker': worker,
+            'has_permission': True,
             'title': _('Worker %s') % worker.name,
         })
         return ctx
@@ -234,6 +238,7 @@ class SchedulerDetails(SuperUserMixin, generic.TemplateView):
             'queue': queue,
             'jobs': [serialize_scheduled_job(job, next_run)
                      for job, next_run in jobs],
+            'has_permission': True,
             'title': "Jobs scheduled on '%s' queue" % queue.name,
         })
         return ctx
