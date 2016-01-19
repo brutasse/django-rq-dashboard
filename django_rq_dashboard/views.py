@@ -230,7 +230,8 @@ class SchedulerDetails(SuperUserMixin, generic.TemplateView):
         scheduler = Scheduler(self.connection)
         queue = Queue(self.kwargs['queue'], connection=self.connection)
 
-        def cond(job, next_run):
+        def cond(job_tuple):
+            job, next_run = job_tuple
             return job.origin == queue.name
         jobs = filter(cond, scheduler.get_jobs(with_times=True))
 
