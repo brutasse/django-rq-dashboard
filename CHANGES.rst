@@ -1,6 +1,11 @@
 Changelog
 =========
 
+0.3.0 (2016-03-11)
+------------------
+
+* Add support for Django 1.9. Drop support for Django < 1.5.
+
 0.2.2 (2014-06-23)
 ------------------
 
