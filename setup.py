@@ -19,7 +19,7 @@ setup(
     install_requires=[
         'pytz',
         'rq',
-        'Django>=1.4',
+        'Django>=1.5',
     ],
     classifiers=[
         'Development Status :: 3 - Alpha',
