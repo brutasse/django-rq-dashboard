@@ -57,7 +57,7 @@ def serialize_worker(worker):
     return dict(
         name=worker.name,
         queues=[q.name for q in worker.queues],
-        state=worker.get_state().decode('utf-8'),
+        state=worker.get_state(),
         url=reverse('rq_worker', args=[worker.name]),
     )
 
