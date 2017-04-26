@@ -88,6 +88,9 @@ class SuperUserMixin(object):
 
         return super(SuperUserMixin, self).dispatch(request, *args, **kwargs)
 
+def by_name(obj):
+    return obj.name
+
 
 class Stats(SuperUserMixin, generic.TemplateView):
     template_name = 'rq/stats.html'
@@ -95,8 +98,10 @@ class Stats(SuperUserMixin, generic.TemplateView):
     def get_context_data(self, **kwargs):
         ctx = super(Stats, self).get_context_data(**kwargs)
         ctx.update({
-            'queues': Queue.all(connection=self.connection),
-            'workers': Worker.all(connection=self.connection),
+            'queues': sorted(Queue.all(connection=self.connection),
+                             key=by_name),
+            'workers': sorted(Worker.all(connection=self.connection),
+                              key=by_name),
             'has_permission': True,
             'title': 'RQ Status',
         })
