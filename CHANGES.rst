@@ -1,6 +1,12 @@
 Changelog
 =========
 
+0.3.3 (2017-06-13)
+------------------
+
+* Redirect to admin login views when users aren't logged in or lack the proper
+  permissions. Require users to have ``is_staff`` set to ``True``.
+
 0.3.1 (2017-03-21)
 ------------------
 
