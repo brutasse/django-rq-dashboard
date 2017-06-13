@@ -5,11 +5,11 @@ from itertools import groupby
 
 from django.contrib import messages
 from django.conf import settings
-from django.core.exceptions import PermissionDenied
 from django.core.urlresolvers import reverse
 from django.http import Http404, HttpResponse
 from django.shortcuts import redirect
 from django.utils import timezone
+from django.utils.six.moves.urllib.parse import urlencode
 from django.utils.translation import ugettext_lazy as _, ugettext as __
 from django.views import generic
 
@@ -78,8 +78,14 @@ def serialize_scheduled_queues(queue):
 
 class SuperUserMixin(object):
     def dispatch(self, request, *args, **kwargs):
-        if not request.user.is_superuser:
-            raise PermissionDenied
+        if not request.user.is_authenticated():
+            return redirect('{}?{}'.format(reverse('admin:login'),
+                                           urlencode({
+                                               'next': reverse('rq_stats')
+                                           })))
+        if not request.user.is_staff:
+            messages.error(request, 'You lack the permission required to access the RQ Dashboard.')
+            return redirect('admin:login')
 
         opts = getattr(settings, 'RQ', {}).copy()
         opts.pop('eager', None)
